@@ -54,3 +54,15 @@ Optional: human evaluation for coherence and relevance.
 - Liu et al. (2024) – FlashBack  
 - Johnson et al. (2019) – FAISS
 
+
+## How to Run the Project:
+
+### Download MS MARCO dataset:
+python data/download_dataset.py
+
+### Test FAISSRetriever (encodes each document into vector embeddings using a SentenceTransformer model):
+python pipeline/test_faiss_retriever.py
+
+### Test BM25Retriever (represents each document using sparse TF-IDF-style term frequencies):
+### Note: see line 41 of test_bm25_retriever.py, I shrink the corpus size to 10000 for faster indexing 
+python pipeline/test_bm25_retriever.py
