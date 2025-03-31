@@ -41,14 +41,14 @@ class FAISSRetriever:
         cpu_index = faiss.IndexFlatIP(dim)
         cpu_index.add(self.embeddings)
 
-        # Check if GPUs are available; if so, move the index to GPU.
-        num_gpus = faiss.get_num_gpus()
-        if num_gpus > 0:
-            print("Using FAISS GPU with", num_gpus, "GPUs available.")
-            self.index = faiss.index_cpu_to_all_gpus(cpu_index)
-        else:
-            print("No GPU found. Using CPU index.")
-            self.index = cpu_index
+        # Check if GPUs are available; if so, move the index to GPU. (not working)
+        # num_gpus = faiss.get_num_gpus()
+        # if num_gpus > 0:
+        #     print("Using FAISS GPU with", num_gpus, "GPUs available.")
+        #     self.index = faiss.index_cpu_to_all_gpus(cpu_index)
+        # else:
+        #     print("No GPU found. Using CPU index.")
+        #     self.index = cpu_index
 
     def retrieve(self, query, top_k=10):
         """
