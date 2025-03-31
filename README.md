@@ -55,17 +55,42 @@ Optional: human evaluation for coherence and relevance.
 - Johnson et al. (2019) – FAISS
 
 
-#### How to Run Pipeline & Framework Part:
+## 🔧 Setup Instructions
 
-##### Download MS MARCO dataset:
-python data/download_dataset.py
+1. Create virtual environment:
+   ```bash
+   cd CSCI-544-RAG
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-##### Test FAISSRetriever (encodes each document into vector embeddings using a SentenceTransformer model):
-python pipeline/test_faiss_retriever.py
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-##### Test BM25Retriever (represents each document using sparse TF-IDF-style term frequencies):
-###### Note: see line 41 of test_bm25_retriever.py, I shrink the corpus size to 10000 for faster indexing 
-python pipeline/test_bm25_retriever.py
+3. Download MS MARCO dataset:
+   ```bash
+   python data/download_dataset.py
+   ```
 
-##### Test ANNRetriever (uses approx. nearest neighbor search over dense vector embeddings to retrieve semantically similar documents):
-python pipeline/test_ann_retriever.py
+4. Run Pipeline & Framework Test Scripts:
+
+   - **Test FAISSRetriever**  
+     (Encodes each document into vector embeddings using a SentenceTransformer model):
+     ```bash
+     python pipeline/test_faiss_retriever.py
+     ```
+
+   - **Test BM25Retriever**  
+     (Represents each document using sparse TF-IDF-style term frequencies):  
+     📝 _Note: Line 41 in `test_bm25_retriever.py` limits the corpus to 10,000 passages for faster indexing._
+     ```bash
+     python pipeline/test_bm25_retriever.py
+     ```
+
+   - **Test ANNRetriever**  
+     (Uses approximate nearest neighbor search over dense embeddings to retrieve semantically similar documents):
+     ```bash
+     python pipeline/test_ann_retriever.py
+     ```
