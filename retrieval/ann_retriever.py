@@ -1,5 +1,6 @@
 import faiss
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 from utils.preprocess import Preprocessor
 from llama_index.core import Document
@@ -18,41 +19,47 @@ class ANNRetriever:
         self.corpus = corpus
         self.method = method
 
-        # Load the embedding model (downloads automatically from HuggingFace)
-        self.model = SentenceTransformer(model_name)
+        # Determine device for embedding: use cuda if available, else cpu.
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Using device for embedding: {device}")
 
-        # Preprocess each passage using dense-friendly cleaning
-        self.cleaned_corpus = [Preprocessor.preprocess_text_for_dense_methods(text) for text in corpus]
+        # Load the embedding model on the selected device.
+        self.model = SentenceTransformer(model_name, device=device)
 
-        # Create Document objects for easy retrieval + display
+        # Preprocess each passage using dense-friendly cleaning.
+        self.cleaned_corpus = [
+            Preprocessor.preprocess_text_for_dense_methods(text) for text in corpus
+        ]
+
+        # Create Document objects for easy retrieval + display.
         self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
 
-        # Encode all documents into dense vectors (embeddings)
+        # Encode all documents into dense vectors (embeddings).
         self.embeddings = self.model.encode(
-            self.cleaned_corpus, 
-            show_progress_bar=True,         # Show loading bar
-            convert_to_numpy=True           # Convert to NumPy array for FAISS
+            self.cleaned_corpus,
+            show_progress_bar=True,
+            convert_to_numpy=True
         )
 
-        # Normalize vectors to unit length (important for cosine similarity)
+        # Normalize vectors to unit length (important for cosine similarity).
         faiss.normalize_L2(self.embeddings)
         self.dim = self.embeddings.shape[1]
 
-        # Build the FAISS index based on the chosen ANN method
+        # Build the FAISS index based on the chosen ANN method.
         if method == "hnsw":
-            # HNSW = Hierarchical Navigable Small World graph (fast and accurate)
-            self.index = faiss.IndexHNSWFlat(self.dim, 32)  # 32 = number of neighbors
+            # HNSW = Hierarchical Navigable Small World graph (fast and accurate).
+            self.index = faiss.IndexHNSWFlat(self.dim, 32)  # 32 = number of neighbors.
         elif method == "pq":
-            # PQ = Product Quantization (compact index, lower memory usage)
-            nlist = 100  # num of clusters
-            m = 16       # sub-vector size
-            quantizer = faiss.IndexFlatL2(self.dim) # Used to group vectors
+            # PQ = Product Quantization (compact index, lower memory usage).
+            nlist = 100  # number of clusters.
+            m = 16  # sub-vector size.
+            quantizer = faiss.IndexFlatL2(self.dim)  # Used to group vectors.
             self.index = faiss.IndexIVFPQ(quantizer, self.dim, nlist, m, 8)
-            self.index.train(self.embeddings) # Must train PQ before adding data
+            self.index.train(self.embeddings)  # Must train PQ before adding data.
         else:
             raise ValueError("Unsupported method: choose 'hnsw' or 'pq'")
-        
-        # Add all document vectors to the index
+
+        # Add all document vectors to the index.
         self.index.add(self.embeddings)
 
     def retrieve(self, query, top_k=10):
@@ -60,19 +67,22 @@ class ANNRetriever:
         Retrieves top_k most similar documents to the input query.
 
         Parameters:
-            query (str): The user's input question or keyword phrase
-            top_k (int): Number of top results to return
+            query (str): The user's input question or keyword phrase.
+            top_k (int): Number of top results to return.
 
         Returns:
-            List of (Document, similarity score) tuples
+            List of (Document, similarity score) tuples.
         """
-        query_vec = self.model.encode([Preprocessor.preprocess_text_for_dense_methods(query)], convert_to_numpy=True)
+        query_vec = self.model.encode(
+            [Preprocessor.preprocess_text_for_dense_methods(query)],
+            convert_to_numpy=True
+        )
         faiss.normalize_L2(query_vec)
 
-        # Search for nearest neighbors in the FAISS index
+        # Search for nearest neighbors in the FAISS index.
         scores, indices = self.index.search(query_vec, top_k)
 
-        # Collect and return top matching documents with their similarity scores
+        # Collect and return top matching documents with their similarity scores.
         results = []
         for idx, score in zip(indices[0], scores[0]):
             if idx < len(self.documents):
