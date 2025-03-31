@@ -55,14 +55,17 @@ Optional: human evaluation for coherence and relevance.
 - Johnson et al. (2019) – FAISS
 
 
-## How to Run the Project:
+#### How to Run Pipeline & Framework Part:
 
-### Download MS MARCO dataset:
+##### Download MS MARCO dataset:
 python data/download_dataset.py
 
-### Test FAISSRetriever (encodes each document into vector embeddings using a SentenceTransformer model):
+##### Test FAISSRetriever (encodes each document into vector embeddings using a SentenceTransformer model):
 python pipeline/test_faiss_retriever.py
 
-### Test BM25Retriever (represents each document using sparse TF-IDF-style term frequencies):
-### Note: see line 41 of test_bm25_retriever.py, I shrink the corpus size to 10000 for faster indexing 
+##### Test BM25Retriever (represents each document using sparse TF-IDF-style term frequencies):
+###### Note: see line 41 of test_bm25_retriever.py, I shrink the corpus size to 10000 for faster indexing 
 python pipeline/test_bm25_retriever.py
+
+##### Test ANNRetriever (uses approx. nearest neighbor search over dense vector embeddings to retrieve semantically similar documents):
+python pipeline/test_ann_retriever.py
