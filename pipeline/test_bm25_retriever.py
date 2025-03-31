@@ -9,31 +9,24 @@ from retrieval.bm25_retriever import BM25Retriever
 
 
 def load_ms_marco_corpus(max_passages=None):
-    """
-    Loads MS MARCO from ../data/ms_marco.json and returns a list of passages.
-    If max_passages is set, only returns that many for testing.
-    """
     data_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
     with open(data_path, "r", encoding="utf-8") as f:
         dataset = json.load(f)
 
-    if "passage" in dataset:
-        corpus = dataset["passage"]
-    elif "passage_text" in dataset:
-        corpus = dataset["passage_text"]
-    else:
-        # Default fallback
-        corpus = []
-        for key, value in dataset.items():
-            if isinstance(value, list) and value and isinstance(value[0], str):
-                corpus = value
-                break
+    # Extract individual passages
+    passages = dataset["passages"]
 
-    # Limit to first N passages if max_passages is set
+    # Flatten all passage_text entries (each is a list of paragraphs)
+    corpus = []
+    for p in passages:
+        if isinstance(p["passage_text"], list):
+            corpus.extend(p["passage_text"])  # Add each paragraph to corpus
+        else:
+            corpus.append(p["passage_text"])  # In case it's a single string
+
     if max_passages:
         corpus = corpus[:max_passages]
     return corpus
-
 
 def main():
     print("Loading MS MARCO corpus...")
