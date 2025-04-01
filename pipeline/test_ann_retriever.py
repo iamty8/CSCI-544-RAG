@@ -41,12 +41,13 @@ def main():
     retriever = ANNRetriever(corpus, method=method)
 
     query = "What is the capital of France?"
-    rewriter = QueryRewriter(method="paraphrase")  # can modify to truncate/refine/none
-    rewritten_query = rewriter.rewrite(query)
-    print(f"\nOriginal_Query: {query}\n")
+    query2 = "How long can I wait to cook my frozen ground turkey which I put in my fridge?"
+    rewriter = QueryRewriter(method="refine")  # can modify to truncate/refine/paraphrase/none
+    rewritten_query = rewriter.rewrite(query2)
+    print(f"\nOriginal_Query: {query2}\n")
     print(f"\nRewritten_Query: {rewritten_query}\n")
 
-    results = retriever.retrieve(query, top_k=10)
+    results = retriever.retrieve(query2, top_k=10)
 
     print("Top retrieval results:")
     for i, (doc, score) in enumerate(results):
