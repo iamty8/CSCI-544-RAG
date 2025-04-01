@@ -1,5 +1,5 @@
 from query.paraphrase import paraphrase_query
-# from query.truncation import truncate_query
+from query.truncation import QueryTruncator
 # from query.embedding_refinement import refine_query
 
 
@@ -11,8 +11,9 @@ class QueryRewriter:
     def rewrite(self, query: str) -> str:
         if self.method == "paraphrase":
             return paraphrase_query(query)
-        # elif self.method == "truncate":
-            # return truncate_query(query, max_tokens=10)
+        elif self.method == "truncation":
+            # return QueryTruncator.truncate_query(query, max_tokens=20)
+            return QueryTruncator.truncate_query_keywords_only(query, max_tokens=10)
         # elif self.method == "refine":
             # return refine_query(query)
         else:
