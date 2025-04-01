@@ -77,9 +77,3 @@ urllib3==2.3.0
 wrapt==1.17.2
 xxhash==3.5.0
 yarl==1.18.3
-
-# For metric evaluation
-evaluate==0.4.0
-rouge-score==0.1.2
-bert-score==0.3.13
-memory-profiler==0.60

@@ -6,28 +6,24 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from retrieval.ann_retriever import ANNRetriever
+from query.strategies import QueryRewriter
 
 
 def load_ms_marco_corpus(max_passages=None):
-    """
-    Loads MS MARCO passages from ../data/ms_marco.json.
-    Optionally limit to first N passages.
-    """
     data_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
     with open(data_path, "r", encoding="utf-8") as f:
         dataset = json.load(f)
 
-    # Fallback key detection
-    if "passage" in dataset:
-        corpus = dataset["passage"]
-    elif "passage_text" in dataset:
-        corpus = dataset["passage_text"]
-    else:
-        corpus = []
-        for key, value in dataset.items():
-            if isinstance(value, list) and value and isinstance(value[0], str):
-                corpus = value
-                break
+    # Extract individual passages
+    passages = dataset["passages"]
+
+    # Flatten all passage_text entries (each is a list of paragraphs)
+    corpus = []
+    for p in passages:
+        if isinstance(p["passage_text"], list):
+            corpus.extend(p["passage_text"])  # Add each paragraph to corpus
+        else:
+            corpus.append(p["passage_text"])  # In case it's a single string
 
     if max_passages:
         corpus = corpus[:max_passages]
@@ -45,7 +41,10 @@ def main():
     retriever = ANNRetriever(corpus, method=method)
 
     query = "What is the capital of France?"
-    print(f"\nQuery: {query}\n")
+    rewriter = QueryRewriter(method="paraphrase")  # can modify to truncate/refine/none
+    rewritten_query = rewriter.rewrite(query)
+    print(f"\nOriginal_Query: {query}\n")
+    print(f"\nRewritten_Query: {rewritten_query}\n")
 
     results = retriever.retrieve(query, top_k=10)
 
