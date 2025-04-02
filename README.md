@@ -67,6 +67,8 @@ Optional: human evaluation for coherence and relevance.
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+   pip install git+https://github.com/PrithivirajDamodaran/Parrot_Paraphraser.git
    ```
 
 3. Download MS MARCO dataset:
@@ -94,3 +96,8 @@ Optional: human evaluation for coherence and relevance.
      ```bash
      python pipeline/test_ann_retriever.py
      ```
+
+5. To create experiment, refer to `./exp/ann_truncation_hnsw.sh`. Run experiment with 
+   ```sh
+   sh ./exp/ann_truncation_hnsw.sh
+   ```
