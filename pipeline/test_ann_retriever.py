@@ -7,32 +7,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from retrieval.ann_retriever import ANNRetriever
 from query.strategies import QueryRewriter
-
-
-def load_ms_marco_corpus(max_passages=None):
-    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
-    with open(data_path, "r", encoding="utf-8") as f:
-        dataset = json.load(f)
-
-    # Extract individual passages
-    passages = dataset["passages"]
-
-    # Flatten all passage_text entries (each is a list of paragraphs)
-    corpus = []
-    for p in passages:
-        if isinstance(p["passage_text"], list):
-            corpus.extend(p["passage_text"])  # Add each paragraph to corpus
-        else:
-            corpus.append(p["passage_text"])  # In case it's a single string
-
-    if max_passages:
-        corpus = corpus[:max_passages]
-    return corpus
+from utils.retriever_utils import load_ms_marco_corpus
+from configs.config import DATA_PATH
 
 
 def main():
     print("Loading MS MARCO corpus...")
-    corpus = load_ms_marco_corpus()
+    corpus = load_ms_marco_corpus(data_path=os.path.join(DATA_PATH, "ms_marco.json"))
     print(f"Loaded {len(corpus)} passages.")
 
     method = "hnsw"  # 🔁 Change to "pq" to test PQ variant
