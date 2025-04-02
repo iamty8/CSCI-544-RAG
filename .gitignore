@@ -1,4 +1,8 @@
 .DS_Store
+.json
+myenv/
+venv/
+__pycache__/
 *.json
 *.pyc
 */__init__.py

@@ -26,6 +26,8 @@ class FAISSRetriever(RetrieverBase):
         # Create Document objects for later retrieval output.
         self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
 
+        self.text_to_doc_id = {doc.text: doc.doc_id for doc in self.documents}
+
         # Determine device: cuda if available, else cpu.
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {device}")
@@ -44,13 +46,13 @@ class FAISSRetriever(RetrieverBase):
         cpu_index.add(self.embeddings)
 
         # Check if GPUs are available; if so, move the index to GPU. (not working)
-        # num_gpus = faiss.get_num_gpus()
-        # if num_gpus > 0:
-        #     print("Using FAISS GPU with", num_gpus, "GPUs available.")
-        #     self.index = faiss.index_cpu_to_all_gpus(cpu_index)
-        # else:
-        #     print("No GPU found. Using CPU index.")
-        #     self.index = cpu_index
+        num_gpus = faiss.get_num_gpus()
+        if num_gpus > 0:
+            print("Using FAISS GPU with", num_gpus, "GPUs available.")
+            self.index = faiss.index_cpu_to_all_gpus(cpu_index)
+        else:
+            print("No GPU found. Using CPU index.")
+            self.index = cpu_index
 
     def retrieve(self, query, top_k=10):
         """
@@ -78,5 +80,5 @@ class FAISSRetriever(RetrieverBase):
         results = []
         for idx, score in zip(indices, scores):
             if idx < len(self.documents):
-                results.append((self.documents[idx].text, float(score)))
+                results.append((self.documents[idx], float(score)))
         return results

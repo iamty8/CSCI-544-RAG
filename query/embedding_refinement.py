@@ -26,7 +26,9 @@ class EmbeddingRefiner:
         token_scores = mean_attn.mean(dim=0)           # 每个 token 的被关注程度
 
         # 选取 top_k token id
-        topk_ids = torch.topk(token_scores, top_k).indices
+        num_tokens = token_scores.size(0)
+        actual_top_k = min(top_k, num_tokens)
+        topk_ids = torch.topk(token_scores, actual_top_k).indices
         topk_ids = topk_ids.sort().values  # 保持原始顺序
 
         refined_tokens = [self.tokenizer.decode([inputs.input_ids[0][i]], skip_special_tokens=True) for i in topk_ids]

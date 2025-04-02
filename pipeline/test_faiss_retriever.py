@@ -40,10 +40,14 @@ def main():
 
     results = retriever.retrieve(query, top_k=10)
 
-    print("Top retrieval results:")
-    for i, (passage_text, score) in enumerate(results):
-        print(f"[{i+1}] Score: {score:.4f}")
-        print(f"Passage: {passage_text}\n")
+    # print("Top retrieval results:")
+    # for i, (passage_text, score) in enumerate(results):
+    #     print(f"[{i+1}] Score: {score:.4f}")
+    #     print(f"Passage: {passage_text}\n")
+    
+    for i, (doc, score) in enumerate(results):
+        print(f"[{i+1}] Document ID: {doc.doc_id}, Score: {score:.4f}")
+        print(f"Text: {doc.text}\n")
 
 if __name__ == "__main__":
     main()
