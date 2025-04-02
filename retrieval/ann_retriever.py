@@ -2,11 +2,13 @@ import faiss
 import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
-from utils.preprocess import Preprocessor
 from llama_index.core import Document
 
+from utils.preprocess import Preprocessor
+from retrieval.retriever_base import RetrieverBase
 
-class ANNRetriever:
+
+class ANNRetriever(RetrieverBase):
     def __init__(self, corpus, model_name="sentence-transformers/msmarco-MiniLM-L-6-v3", method="hnsw"):
         """
         Initializes the retriever with FAISS and a sentence embedding model.

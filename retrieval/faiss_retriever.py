@@ -7,8 +7,10 @@ import torch
 from llama_index.core import Document
 
 from utils.preprocess import Preprocessor
+from retrieval.retriever_base import RetrieverBase
 
-class FAISSRetriever:
+class FAISSRetriever(RetrieverBase):
+
     def __init__(self, corpus, model_name="sentence-transformers/msmarco-MiniLM-L-6-v3"):
         """
         Initialize the FAISSRetriever.

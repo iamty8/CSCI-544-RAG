@@ -1,11 +1,13 @@
 from llama_index.core.indices.keyword_table import GPTKeywordTableIndex
 from llama_index.core import Document
-from utils.preprocess import Preprocessor
 from llama_index.core import ServiceContext
 from llama_index.core.retrievers import KeywordTableSimpleRetriever
 
+from utils.preprocess import Preprocessor
+from retrieval.retriever_base import RetrieverBase
 
-class BM25Retriever:
+
+class BM25Retriever(RetrieverBase):
     def __init__(self, corpus):
         """
         Initializes BM25Retriever by applying sparse preprocessing and creating a BM25 index.

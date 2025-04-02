@@ -6,32 +6,14 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from retrieval.ann_retriever import ANNRetriever
-
-
-def load_ms_marco_corpus(max_passages=None):
-    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
-    with open(data_path, "r", encoding="utf-8") as f:
-        dataset = json.load(f)
-
-    # Extract individual passages
-    passages = dataset["passages"]
-
-    # Flatten all passage_text entries (each is a list of paragraphs)
-    corpus = []
-    for p in passages:
-        if isinstance(p["passage_text"], list):
-            corpus.extend(p["passage_text"])  # Add each paragraph to corpus
-        else:
-            corpus.append(p["passage_text"])  # In case it's a single string
-
-    if max_passages:
-        corpus = corpus[:max_passages]
-    return corpus
+from query.strategies import QueryRewriter
+from utils.retriever_utils import load_ms_marco_corpus
+from configs.config import DATA_PATH
 
 
 def main():
     print("Loading MS MARCO corpus...")
-    corpus = load_ms_marco_corpus()
+    corpus = load_ms_marco_corpus(data_path=os.path.join(DATA_PATH, "ms_marco.json"))
     print(f"Loaded {len(corpus)} passages.")
 
     method = "hnsw"  # 🔁 Change to "pq" to test PQ variant
@@ -40,9 +22,13 @@ def main():
     retriever = ANNRetriever(corpus, method=method)
 
     query = "What is the capital of France?"
-    print(f"\nQuery: {query}\n")
+    query2 = "How long can I wait to cook my frozen ground turkey which I put in my fridge?"
+    rewriter = QueryRewriter(method="refine")  # can modify to truncate/refine/paraphrase/none
+    rewritten_query = rewriter.rewrite(query2)
+    print(f"\nOriginal_Query: {query2}\n")
+    print(f"\nRewritten_Query: {rewritten_query}\n")
 
-    results = retriever.retrieve(query, top_k=10)
+    results = retriever.retrieve(query2, top_k=10)
 
     print("Top retrieval results:")
     for i, (doc, score) in enumerate(results):
