@@ -36,6 +36,8 @@ class ANNRetriever(RetrieverBase):
         # Create Document objects for easy retrieval + display.
         self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
 
+        self.text_to_doc_id = {doc.text: doc.doc_id for doc in self.documents}
+
         # Encode all documents into dense vectors (embeddings).
         self.embeddings = self.model.encode(
             self.cleaned_corpus,

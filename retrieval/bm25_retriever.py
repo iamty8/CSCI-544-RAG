@@ -5,6 +5,7 @@ from llama_index.core.retrievers import KeywordTableSimpleRetriever
 
 from utils.preprocess import Preprocessor
 from retrieval.retriever_base import RetrieverBase
+from llama_index.core import Settings
 
 
 class BM25Retriever(RetrieverBase):
@@ -23,10 +24,15 @@ class BM25Retriever(RetrieverBase):
         # Create LlamaIndex Document objects
         self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(self.cleaned_docs)]
 
+        self.text_to_doc_id = {doc.text: doc.doc_id for doc in self.documents}
+
+        Settings.llm = None
+        Settings.embed_model = None
+
         # Build BM25 index using GPTKeywordTableIndex
         self.index = GPTKeywordTableIndex.from_documents(
-            self.documents,
-            service_context=ServiceContext.from_defaults(llm=None, embed_model=None) # disables OpenAI
+            self.documents
+            # service_context=ServiceContext.from_defaults(llm=None, embed_model=None) # disables OpenAI
         )
 
     def retrieve(self, query, top_k=10):
