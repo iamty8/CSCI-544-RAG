@@ -18,7 +18,7 @@ class ANNRetriever(RetrieverBase):
             model_name (str): Sentence transformer model name
             method (str): Type of FAISS index to use ('hnsw' or 'pq')
         """
-        self.corpus = corpus
+        super().__init__(corpus)
         self.method = method
 
         # Determine device for embedding: use cuda if available, else cpu.
@@ -32,11 +32,6 @@ class ANNRetriever(RetrieverBase):
         self.cleaned_corpus = [
             Preprocessor.preprocess_text_for_dense_methods(text) for text in corpus
         ]
-
-        # Create Document objects for easy retrieval + display.
-        self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
-
-        self.text_to_doc_id = {doc.text: doc.doc_id for doc in self.documents}
 
         # Encode all documents into dense vectors (embeddings).
         self.embeddings = self.model.encode(
