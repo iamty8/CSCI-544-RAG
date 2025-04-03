@@ -6,10 +6,13 @@ class RetrieverBase(ABC):
     Base class for all retrievers.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, corpus:list, **kwargs):
         """
         Initialize the retriever with the given parameters.
         """
+        self.corpus:list = corpus
+        self.documents:list[Document] = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
+        self.text_to_doc_id:dict[str, str] = {doc.text: doc.doc_id for doc in self.documents}
         self.params = kwargs
 
     @abstractmethod
