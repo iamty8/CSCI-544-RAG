@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from retrieval.ann_retriever import ANNRetriever
 from query.strategies import QueryRewriter
-from metrics.metric_utils import measure_retrieval_speed_and_memory, reciprocal_rank, recall_at_k, compute_rouge, compute_bertscore, retrieval_precision
+from utils.metric_utils import measure_retrieval_speed_and_memory, reciprocal_rank, recall_at_k, compute_rouge, compute_bertscore, retrieval_precision
 from utils.retriever_utils import load_ms_marco_corpus
 from configs.config import DATA_PATH
 

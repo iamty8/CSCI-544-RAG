@@ -14,7 +14,7 @@ from configs.config import RETRIEVERS, DATA_PATH, QUERY_METHODS
 from retrieval.retriever_base import RetrieverBase
 from query.strategies import QueryRewriter
 from utils.retriever_utils import parse_kv_args, setup_logger
-from metrics.metric_utils import measure_retrieval_speed_and_memory, reciprocal_rank, recall_at_k, compute_rouge, compute_bertscore, retrieval_precision
+from utils.metric_utils import measure_retrieval_speed_and_memory, reciprocal_rank, recall_at_k, compute_rouge, compute_bertscore, retrieval_precision
 
 
 class Exp:
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         parser.add_argument("--retriever", type=str, default="ann", help="Retriever name (e.g. 'bm25', 'ann').")
         parser.add_argument("--retriever_args", nargs='*', default=["method=hnsw"],
                             help="Retriever arguments as key=value pairs, e.g., method=hnsw ef=200",)
-        parser.add_argument("--query", type=str, required=True, help="Query string.")
+        # parser.add_argument("--query", type=str, required=True, help="Query string.")
         parser.add_argument("--rewrite_method", type=str, default=None,
                             help="Query rewrite method: truncation, refine, paraphrase.")
         parser.add_argument("--top_k", type=int, default=10, help="Number of top documents to retrieve.")
