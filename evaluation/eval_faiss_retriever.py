@@ -32,10 +32,14 @@ def load_query_answer_pairs(msmacro_path, max_queries=None):
 
     queries = data["query"]
     answers = data["answers"]
-    pairs = [(q, a[0]) for q, a in zip(queries, answers) if a]  # Take the first answer
+    passages = data["passages"]
+    qa_passage_triples = []
+    for q, a, p in zip(queries, answers, passages):
+        if a:
+            qa_passage_triples.append((q, a[0], p['passage_text']))  
     if max_queries:
-        pairs = pairs[:max_queries]
-    return pairs
+        qa_passage_triples = qa_passage_triples[:max_queries]
+    return qa_passage_triples
 
 def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
     total_recall, total_precision, total_rr = 0.0, 0.0, 0.0
@@ -45,7 +49,7 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
 
     global_bertscore = evaluate.load("bertscore")
 
-    for query, answer in tqdm(qa_pairs, desc="Evaluating", unit="query"):
+    for query, answer, passage_texts in tqdm(qa_pairs, desc="Evaluating", unit="query"):
         if rewriter:
             query = rewriter.rewrite(query)
 
@@ -54,7 +58,7 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
 
         # Compute metrics
         retrieved_texts = [doc.text for doc, _ in results]
-        relevant_ids = {retriever.text_to_doc_id[answer]} if answer in retriever.text_to_doc_id else set()
+        relevant_ids = {retriever.text_to_doc_id[p] for p in passage_texts if p in retriever.text_to_doc_id}
         total_recall += recall_at_k(results, relevant_ids, k=top_k)
         total_precision += retrieval_precision(results, relevant_ids, k=top_k) 
         total_rr += reciprocal_rank(results, relevant_ids)

@@ -31,10 +31,14 @@ def load_query_answer_pairs(msmacro_path, max_queries=None):
 
     queries = data["query"]
     answers = data["answers"]
-    pairs = [(q, a[0]) for q, a in zip(queries, answers) if a]  # Take the first answer
+    passages = data["passages"]
+    qa_passage_triples = []
+    for q, a, p in zip(queries, answers, passages):
+        if a:
+            qa_passage_triples.append((q, a[0], p['passage_text']))  
     if max_queries:
-        pairs = pairs[:max_queries]
-    return pairs
+        qa_passage_triples = qa_passage_triples[:max_queries]
+    return qa_passage_triples
 
 def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
     total_recall, total_precision, total_rr = 0.0, 0.0, 0.0
@@ -44,19 +48,15 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
 
     global_bertscore = evaluate.load("bertscore")
 
-    for query, answer in tqdm(qa_pairs, desc="Evaluating"):
-        # print("query:", query)
+    for query, answer, passage_texts in tqdm(qa_pairs, desc="Evaluating"):
         if rewriter:
             query = rewriter.rewrite(query)
-            # print("rewrite query:", query)
 
-        # Retrieve documents
         results = retriever.retrieve(query, top_k=top_k)
-        # print(f"Retrieved {len(results)} documents")
 
         # Compute metrics
         retrieved_texts = [doc.text for doc, _ in results]
-        relevant_ids = {retriever.text_to_doc_id[answer]} if answer in retriever.text_to_doc_id else set()
+        relevant_ids = {retriever.text_to_doc_id[p] for p in passage_texts if p in retriever.text_to_doc_id}
         total_recall += recall_at_k(results, relevant_ids, k=top_k)
         total_precision += retrieval_precision(results, relevant_ids, k=top_k) 
         total_rr += reciprocal_rank(results, relevant_ids)
@@ -65,7 +65,6 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
 
         bert_score_result = compute_bertscore(global_bertscore, [retrieved_texts[0]], [answer])
         total_bertscore.append(bert_score_result)
-        # total_bertscore.append(compute_bertscore([retrieved_texts[0]], [answer]))
         torch.cuda.empty_cache()
     
     n = len(qa_pairs)
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     ground_truth_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
     retriever = ANNRetriever(corpus, method="hnsw")
     query_answer_pairs = load_query_answer_pairs(ground_truth_path, max_queries=1000)
-    rewriter = QueryRewriter(method="paraphrase")  # can modify to truncate/refine/paraphrase/none
+    rewriter = QueryRewriter(method="truncate")  # can modify to truncate/refine/paraphrase/none
     evaluate_retriever(retriever, query_answer_pairs, rewriter=rewriter, top_k=10)
 
 
