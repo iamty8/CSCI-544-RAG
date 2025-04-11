@@ -31,14 +31,10 @@ def load_query_answer_pairs(msmacro_path, max_queries=None):
 
     queries = data["query"]
     answers = data["answers"]
-    passages = data["passages"]
-    qa_passage_triples = []
-    for q, a, p in zip(queries, answers, passages):
-        if a:
-            qa_passage_triples.append((q, a[0], p['passage_text']))  
+    pairs = [(q, a[0]) for q, a in zip(queries, answers) if a]  # Take the first answer
     if max_queries:
-        qa_passage_triples = qa_passage_triples[:max_queries]
-    return qa_passage_triples
+        pairs = pairs[:max_queries]
+    return pairs
 
 def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
 
@@ -51,7 +47,6 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
     global_bertscore = evaluate.load("bertscore")
     skipped = 0
 
-
     for idx, (query, answer) in enumerate(tqdm(qa_pairs, desc="Evaluating", unit="query")):
         original_query = query
         if rewriter:
@@ -62,7 +57,6 @@ def evaluate_retriever(retriever, qa_pairs, rewriter=None, top_k=10):
                 continue
 
         results = retriever.retrieve(query, top_k=top_k)
-
 
         # 🧱 Check if results are valid tuples
         if not results or not isinstance(results, list) or not all(isinstance(r, tuple) and len(r) == 2 for r in results):
@@ -129,4 +123,3 @@ if __name__ == "__main__":
 
 
 
-    
