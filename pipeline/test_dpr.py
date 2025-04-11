@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from retrieval.dense_passage_retriever import DensePassageRetriever
 
-def load_ms_marco_corpus(max_passages=1000):
+def load_ms_marco_corpus(max_passages=None):
     data_path = os.path.join(os.path.dirname(__file__), "..", "data", "ms_marco.json")
     with open(data_path, "r", encoding="utf-8") as f:
         dataset = json.load(f)
