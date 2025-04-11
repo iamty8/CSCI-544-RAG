@@ -1,6 +1,9 @@
 import os
 import json
 import argparse
+import logging
+
+from configs.config import LOG_PATH
 
 def load_ms_marco_corpus(data_path:str, max_passages:int=None):
     with open(data_path, "r", encoding="utf-8") as f:
@@ -33,3 +36,44 @@ def parse_kv_args(kv_list: list[str]) -> dict:
             value = float(value)
         args[key] = value
     return args
+
+class SingleTimestampFormatter(logging.Formatter):
+    def __init__(self, fmt_with_time, fmt_no_time, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fmt_with_time = fmt_with_time
+        self.fmt_no_time = fmt_no_time
+        self.first = True
+
+    def format(self, record):
+        if self.first:
+            self._style._fmt = self.fmt_with_time
+            self.first = False
+        else:
+            self._style._fmt = self.fmt_no_time
+        return super().format(record)
+
+
+def setup_logger(log_path: str = LOG_PATH, verbose: bool = True, logger_name="retriever_eval") -> logging.Logger:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    file_handler = logging.FileHandler(log_path, mode='a', encoding='utf-8')
+    formatter = SingleTimestampFormatter(
+        fmt_with_time="%(asctime)s - %(message)s",
+        fmt_no_time="%(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    if verbose:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(message)s'))
+        logger.addHandler(console_handler)
+
+    return logger

@@ -13,3 +13,5 @@ RETRIEVERS:dict[str, retrieval.retriever_base.RetrieverBase] = {
 }
 
 QUERY_METHODS:list[str] = ["truncation", "refine", "paraphrase"]
+
+LOG_PATH:str = './exp/exp.log'

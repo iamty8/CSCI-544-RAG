@@ -27,7 +27,7 @@ def reciprocal_rank(results, relevant_ids):
 
 def recall_at_k(results, relevant_ids, k=10):
     top_k_ids = {doc.doc_id for doc, _ in results[:k]}  # Extract doc_id from the doc object
-    print(f"top_k_ids: {top_k_ids}")
+    # print(f"top_k_ids: {top_k_ids}")
     return len(top_k_ids & set(relevant_ids)) / len(relevant_ids) if relevant_ids else 0
 
 

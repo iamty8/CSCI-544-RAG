@@ -19,14 +19,9 @@ class FAISSRetriever(RetrieverBase):
           corpus (list of str): The list of original passage texts.
           model_name (str): Name of the SentenceTransformer model to use.
         """
-        self.corpus = corpus
+        super().__init__(corpus)
         # Preprocess the corpus for dense retrieval (minimal cleaning)
         self.cleaned_corpus = [Preprocessor.preprocess_text_for_dense_methods(text) for text in corpus]
-
-        # Create Document objects for later retrieval output.
-        self.documents = [Document(text=doc, doc_id=str(idx)) for idx, doc in enumerate(corpus)]
-
-        self.text_to_doc_id = {doc.text: doc.doc_id for doc in self.documents}
 
         # Determine device: cuda if available, else cpu.
         device = "cuda" if torch.cuda.is_available() else "cpu"
