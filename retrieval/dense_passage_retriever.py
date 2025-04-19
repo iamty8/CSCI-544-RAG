@@ -68,3 +68,17 @@ class DensePassageRetriever(RetrieverBase):
             doc = self.documents[idx]
             results.append((doc, float(score)))
         return results  # Return list of (document, score) tuples
+    
+    def result_processing(
+            self, 
+            results:list[tuple[Document, float]], 
+            query:str, 
+            answer:str, 
+            passage_texts:str, 
+            idx:int
+        ) -> tuple[set[str], list[str]]:
+
+        retrieved_texts = [doc.text for doc, _ in results]
+        relevant_ids = {self.text_to_doc_id[p] for p in passage_texts if p in self.text_to_doc_id}
+
+        return retrieved_texts, relevant_ids

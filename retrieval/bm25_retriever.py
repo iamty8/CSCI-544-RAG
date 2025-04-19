@@ -7,9 +7,11 @@ from utils.preprocess import Preprocessor
 from retrieval.retriever_base import RetrieverBase
 from llama_index.core import Settings
 
+from rapidfuzz import fuzz
+
 
 class BM25Retriever(RetrieverBase):
-    def __init__(self, corpus):
+    def __init__(self, corpus, fuzzy_threshold=40):
         """
         Initializes BM25Retriever by applying sparse preprocessing and creating a BM25 index.
 
@@ -34,6 +36,8 @@ class BM25Retriever(RetrieverBase):
             self.documents
             # service_context=ServiceContext.from_defaults(llm=None, embed_model=None) # disables OpenAI
         )
+
+        self.fuzzy_threshold = fuzzy_threshold
 
     def retrieve(self, query, top_k=10):
         """
@@ -60,3 +64,40 @@ class BM25Retriever(RetrieverBase):
             for node in nodes[:top_k]
         ]
         return results
+    
+    def result_processing(
+            self, 
+            results:list[tuple[Document, float]], 
+            query:str, 
+            answer:str, 
+            passage_texts:str, 
+            idx:int
+        ) -> tuple[set[str], list[str]]:
+
+        retrieved_texts = [
+            doc.text for doc, _ in results
+            if hasattr(doc, "text") and isinstance(doc.text, str) and doc.text.strip()
+        ]
+        if len(retrieved_texts) == 0:
+            retrieved_texts = None
+
+        # ✅ fuzzy match
+        relevant_ids = set()
+        for doc, _ in results:
+            if hasattr(doc, "text") and doc.text:
+                sim = fuzz.token_sort_ratio(answer, doc.text)
+                if sim >= self.fuzzy_threshold or answer.lower() in doc.text.lower():
+                    relevant_ids.add(doc.doc_id)
+
+        if not relevant_ids:
+            skipped_norelevant += 1
+            # ✅ optional: 打印前几个失败例子以 debug
+            if idx < 3:
+                print(f"[❌ No fuzzy match] Q: {query}")
+                print(f"A: {answer}")
+                print("Top retrieved texts:")
+                for doc, _ in results[:3]:
+                    print(f"- {doc.text[:200]}...\n")
+            relevant_ids = None
+        
+        return retrieved_texts, relevant_ids

@@ -77,3 +77,20 @@ class FAISSRetriever(RetrieverBase):
             if idx < len(self.documents):
                 results.append((self.documents[idx], float(score)))
         return results
+    
+    def result_processing(
+            self, 
+            results:list[tuple[Document, float]], 
+            query:str, 
+            answer:str, 
+            passage_texts:str, 
+            idx:int
+        ) -> tuple[set[str], list[str]]:
+        relevant_ids = {
+            doc.doc_id for doc in self.documents
+            if any(gt_passage.strip() in doc.text for gt_passage in passage_texts)
+        }
+
+        retrieved_texts = [doc.text for doc, _ in results]
+
+        return retrieved_texts, relevant_ids

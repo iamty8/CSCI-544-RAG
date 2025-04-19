@@ -21,3 +21,14 @@ class RetrieverBase(ABC):
         Retrieve documents based on the query.
         """
         pass
+
+    @abstractmethod
+    def result_processing(
+            self, 
+            results:list[tuple[Document, float]], 
+            query:str, 
+            answer:str, 
+            passage_texts:str, 
+            idx:int
+        ) -> tuple[set[str], list[str]]:
+        pass
