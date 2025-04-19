@@ -2,8 +2,9 @@ import os
 import json
 import argparse
 import logging
+import subprocess
 
-from configs.config import LOG_PATH
+from configs.config import LOG_PATH, RCLONE_REMOTE_NAME
 
 def load_ms_marco_corpus(data_path:str, max_passages:int=None):
     with open(data_path, "r", encoding="utf-8") as f:
@@ -25,6 +26,8 @@ def load_ms_marco_corpus(data_path:str, max_passages:int=None):
     return corpus
 
 def parse_kv_args(kv_list: list[str]) -> dict:
+    if kv_list is None:
+        return {}
     args = {}
     for kv in kv_list:
         if '=' not in kv:
@@ -77,3 +80,21 @@ def setup_logger(log_path: str = LOG_PATH, verbose: bool = True, logger_name="re
         logger.addHandler(console_handler)
 
     return logger
+
+def get_git_commit_info():
+    try:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+        commit_message = subprocess.check_output(["git", "log", "-1", "--pretty=format:%s"]).decode("utf-8").strip()
+        return commit_hash, commit_message
+    except Exception as e:
+        return None, None
+    
+def sync_logs_to_drive():
+    try:
+        print("Syncing with Google Drive ...")
+        subprocess.run([
+            "rclone", "copy", LOG_PATH, f"{RCLONE_REMOTE_NAME}:Experiments/logs/", "--update", "--quiet"
+        ], check=True)
+        print("Synced.")
+    except subprocess.CalledProcessError:
+        print("Failed to sync.")

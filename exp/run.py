@@ -13,7 +13,7 @@ import torch
 from configs.config import RETRIEVERS, DATA_PATH, QUERY_METHODS
 from retrieval.retriever_base import RetrieverBase
 from query.strategies import QueryRewriter
-from utils.retriever_utils import parse_kv_args, setup_logger
+from utils.retriever_utils import parse_kv_args, setup_logger, get_git_commit_info, sync_logs_to_drive
 from utils.metric_utils import measure_retrieval_speed_and_memory, reciprocal_rank, recall_at_k, compute_rouge, compute_bertscore, retrieval_precision
 
 
@@ -22,9 +22,10 @@ class Exp:
         self.corpus:list = self._load_corpus(corpus_path) if retriever != "bm25" else self._load_corpus(corpus_path, max_passages=10000)
         self.qa_pairs:list = self._load_query_answer_pairs(corpus_path) if retriever != "bm25" else self._load_query_answer_pairs(corpus_path, max_queries=10000)
         self.retriever_name:str = retriever
+        print(retriever_args)
         self.retriever:RetrieverBase = RETRIEVERS[retriever](corpus=self.corpus, **retriever_args)
         self.rewriters:dict[str, QueryRewriter] = dict(
-            zip(query_methods, [QueryRewriter(method=query_method) for query_method in query_methods]))
+            zip([query_method for query_method in query_methods], [QueryRewriter(method=query_method) for query_method in query_methods]))
 
     def _load_corpus(self, corpus_path:str, max_passages:int=None) -> list:
         with open(corpus_path, "r", encoding="utf-8") as f:
@@ -74,13 +75,10 @@ class Exp:
         """
         Query the retriever with an optional rewrite method."
         """
-        if rewrite_method not in self.rewriters.keys() and rewrite_method is not None:
+        if rewrite_method not in self.rewriters.keys():
             raise ValueError(f"Rewrite method '{rewrite_method}' not found.")
         rewriter = self.rewriters[rewrite_method] if rewrite_method else None
-        if rewriter:
-            rewritten_query = rewriter.rewrite(query)
-        else:
-            rewritten_query = query
+        rewritten_query = rewriter.rewrite(query)
         return self.retriever.retrieve(rewritten_query, top_k=top_k), rewritten_query
     
     def evaluate(
@@ -91,6 +89,12 @@ class Exp:
                 max_queries:int=-1
             ) -> dict[str, float]:
         logger = setup_logger(verbose=verbose)
+
+        commit_hash, commit_message = get_git_commit_info()
+        if commit_hash:
+            logger.info(f"Git Commit: {commit_hash}")
+        else:
+            logger.warning("Unable to retrieve git commit information.")
 
         total_recall, total_precision, total_rr = 0.0, 0.0, 0.0
         total_rouge = []
@@ -127,9 +131,17 @@ class Exp:
             "ROUGE-1": sum(d['rouge1'].fmeasure for d in total_rouge) / n,
             "BERTScore-F1": sum(d['f1'] for d in total_bertscore) / n
         }
-        logger.info(f"{self.retriever_name} - {rewrite_method if rewrite_method else 'No Rewrite'}")
+        logger.info(f"{self.retriever_name} - {rewrite_method}")
+        logger.info("-" * 40)
+
+        max_key_len = max(len(key) for key in metrics.keys())
         for key, value in metrics.items():
-            logger.info(f"{key}: {value:.4f}")
+            logger.info(f"{key:<{max_key_len}} : {value:.4f}")
+
+        logger.info("-" * 40)
+        logger.info("\n")
+
+        sync_logs_to_drive()
 
         return metrics
 
@@ -140,13 +152,13 @@ if __name__ == "__main__":
         parser.add_argument("--corpus_path", type=str, default=os.path.join(DATA_PATH, "ms_marco.json"),
                             help="Path to the corpus JSON file.")
         parser.add_argument("--retriever", type=str, default="ann", help="Retriever name (e.g. 'bm25', 'ann').")
-        parser.add_argument("--retriever_args", nargs='*', default=["method=hnsw"],
+        parser.add_argument("--retriever_args", nargs='*', default=None, # default=["method=hnsw"],
                             help="Retriever arguments as key=value pairs, e.g., method=hnsw ef=200",)
         # parser.add_argument("--query", type=str, required=True, help="Query string.")
         parser.add_argument("--rewrite_method", type=str, default=None,
                             help="Query rewrite method: truncation, refine, paraphrase.")
         parser.add_argument("--top_k", type=int, default=10, help="Number of top documents to retrieve.")
-        parser.add_argument("--query_methods", nargs='+', default=["truncation", "refine", "paraphrase"],
+        parser.add_argument("--query_methods", nargs='+', default=["truncation", "refine", "paraphrase", "no-rewrite"],
                             help="List of all available query rewriting methods.")
 
         parsed_args = parser.parse_args()
@@ -162,7 +174,10 @@ if __name__ == "__main__":
     # results, rewritten_query = exp.query(query, rewrite_method="truncation", top_k=10)
     # print(f"\nOriginal Query: {query}\n")
     # print(f"Rewritten Query: {rewritten_query}\n")
-    exp.evaluate(rewrite_method="truncation", top_k=10, verbose=False)
+    for rewrite_method in parsed_args.query_methods:
+        print(f"\nEvaluating with rewrite method: {rewrite_method}\n")
+        exp.evaluate(rewrite_method=rewrite_method, top_k=10, verbose=False)
+    # exp.evaluate(rewrite_method="truncation", top_k=10, verbose=False)
     
     # print("Top retrieval results:")
     # for i, (doc, score) in enumerate(results):

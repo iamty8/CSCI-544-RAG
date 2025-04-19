@@ -6,7 +6,7 @@ from query.embedding_refinement import EmbeddingRefiner
 
 class QueryRewriter:
     def __init__(self, method="paraphrase"):
-        self.method = method.lower()
+        self.method = method.lower() if method else "no-rewrite"
 
     def rewrite(self, query: str) -> str:
         if self.method == "paraphrase":
@@ -18,4 +18,5 @@ class QueryRewriter:
             refiner = EmbeddingRefiner()
             return refiner.refine_query(query)
         else:
-            return query  # 默认不改写
+            self.method = "no-rewrite"
+            return query

@@ -19,7 +19,7 @@ def paraphrase_query(query: str) -> str:
             fluency_threshold=0.80
         )
         if para_phrases:
-            print(para_phrases)
+            # print(para_phrases)
             return para_phrases[0][0]  # 取第一个候选文本
         else:
             return query

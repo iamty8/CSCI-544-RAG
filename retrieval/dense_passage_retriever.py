@@ -5,8 +5,11 @@ from transformers import DPRQuestionEncoder, DPRContextEncoder, DPRQuestionEncod
 from llama_index.core import Document
 from utils.preprocess import Preprocessor
 
-class DensePassageRetriever:
+from retrieval.retriever_base import RetrieverBase
+
+class DensePassageRetriever(RetrieverBase):
     def __init__(self, corpus, batch_size=64, max_length=256):
+        super().__init__(corpus)
         # Note: only GPU can be used for DPR models; using CPU will generate an error
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
@@ -21,7 +24,7 @@ class DensePassageRetriever:
         self.p_tokenizer = DPRContextEncoderTokenizer.from_pretrained("facebook/dpr-ctx_encoder-single-nq-base")
 
         # Convert corpus to Document objects with unique IDs
-        self.documents = [Document(text=doc, doc_id=str(i)) for i, doc in enumerate(corpus)]
+        # self.documents = [Document(text=doc, doc_id=str(i)) for i, doc in enumerate(corpus)]
         # Preprocess each document text for dense retrieval
         texts = [Preprocessor.preprocess_text_for_dense_methods(doc.text) for doc in self.documents]
 
