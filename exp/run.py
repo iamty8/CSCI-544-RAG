@@ -3,11 +3,13 @@ import json
 import argparse
 import logging
 import sys
+import random
 
 from llama_index.core import Document
 import evaluate
 from tqdm import tqdm
 import torch
+import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -28,8 +30,8 @@ class Exp:
             batch_mode:bool=False,
             debug:bool=False
         ):
-        self.corpus:list = self._load_corpus(corpus_path, max_passages=1000 if debug else -1) if retriever != "bm25" else self._load_corpus(corpus_path, max_passages=10000)
-        self.qa_pairs:list = self._load_query_answer_pairs(corpus_path, max_queries=1000 if debug else -1) if retriever != "bm25" else self._load_query_answer_pairs(corpus_path, max_queries=10000)
+        self.corpus:list = self._load_corpus(corpus_path, max_passages=1000 if debug else -1)
+        self.qa_pairs:list = self._load_query_answer_pairs(corpus_path, max_queries=1000 if debug else -1)
         self.retriever_name:str = retriever
         self.batch_mode:bool = batch_mode
         self.retriever:RetrieverBase = RETRIEVERS[retriever](corpus=self.corpus, **retriever_args)
@@ -137,7 +139,8 @@ class Exp:
                 rewrite_method:str=None, 
                 top_k:int=10,
                 verbose:bool=True,
-                max_queries:int=-1
+                max_queries:int=-1,
+                sample_ratio:float=None
             ) -> dict[str, float]:
         logger = setup_logger(verbose=verbose)
 
@@ -159,7 +162,15 @@ class Exp:
 
         skipped_empty, skipped_invalid, skipped_nodoc, skipped_norelevant = 0, 0, 0, 0
 
-        for idx, (query, answer, passage_texts) in enumerate(tqdm(self.qa_pairs[:max_queries], desc="Evaluating")):
+        if sample_ratio:
+            sampled_qa_pairs = random.sample(self.qa_pairs, int(sample_ratio * len(self.qa_pairs)))
+        else:
+            sampled_qa_pairs = self.qa_pairs
+
+        if max_queries < len(sampled_qa_pairs):
+            sampled_qa_pairs = sampled_qa_pairs[:max_queries]
+
+        for idx, (query, answer, passage_texts) in enumerate(tqdm(sampled_qa_pairs, desc="Evaluating")):
             results, rewritten_query = self.query(query, rewrite_method=rewrite_method, top_k=top_k)
 
             if not rewritten_query.strip():
@@ -257,4 +268,4 @@ if __name__ == "__main__":
         exp = Exp("ann", {'method':"hnsw"}, corpus_path, query_methods)
     for rewrite_method in parsed_args.query_methods:
         print(f"\nEvaluating with rewrite method: {rewrite_method}\n")
-        exp.evaluate(rewrite_method=rewrite_method, top_k=10, verbose=False)
+        exp.evaluate(rewrite_method=rewrite_method, top_k=10, verbose=False, sample_ratio=0.2 if exp.retriever_name == 'dense' else None)

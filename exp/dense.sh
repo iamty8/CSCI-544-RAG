@@ -1,3 +1,4 @@
-python ./exp/run.py \
+~/.conda/envs/rlbench/envs/csci544_rag/bin/python ./exp/run.py \
   --retriever "dense" \
-  --top_k 10 
+  --top_k 10 \
+  --query_method no-rewrite
